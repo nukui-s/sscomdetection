@@ -7,6 +7,7 @@ import pandas as pd
 import tensorflow as tf
 import numpy as np
 from sklearn.cluster import KMeans
+from sklearn.metrics import normalized_mutual_info_score
 
 class SSCD(object):
     """Unified Semi-Supervised Community Detection"""
@@ -37,8 +38,8 @@ class SSCD(object):
         self.sess.run(self.init_op)
         self.writer = tf.train.SummaryWriter(log_dir, self.sess.graph_def)
         for s in range(steps):
-            cost, _ = self.sess.run([self.cost, self.opt])
-            
+            cost, sm, _ = self.sess.run([self.cost, self.summary, self.opt])
+            self.writer.add_summary(sm, s)
 
     def prepare_calculation(self):
         self.graph = tf.Graph()
@@ -61,7 +62,6 @@ class SSCD(object):
                                             sparse_values=const_weights)
             self.D = D = tf.diag(tf.reduce_sum(O, reduction_indices=1))
             self.L = L = D - O
-
 
             initializer = tf.truncated_normal_initializer(mean=0.0,
                                                           stddev=1.0)
@@ -99,7 +99,9 @@ class SSCD(object):
 
     @classmethod
     def regulation_term(cls, H, L):
-        reg_term = tf.matmul(tf.matmul(H, L, transpose_a=True), H)
+        HLH = tf.matmul(tf.matmul(H, L, transpose_a=True), H)
+        mask = tf.diag(tf.ones([H.get_shape()[1]]))
+        reg_term = tf.reduce_sum(HLH * mask)
         return reg_term
 
 if __name__ == '__main__':
@@ -110,6 +112,7 @@ if __name__ == '__main__':
 
     model = SSCD(2)
 
-    model.fit_and_transform(edge_list, const)
+    model.fit_and_transform(edge_list, const, steps=200)
     km = KMeans(2)
     H = model.get_latent_vectors()
+    labels = km.fit_predict(H)
