@@ -9,6 +9,8 @@ import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.metrics import normalized_mutual_info_score
 
+from Update import UpdateElem
+
 class SSCD(object):
     """Unified Semi-Supervised Community Detection"""
 
@@ -18,7 +20,7 @@ class SSCD(object):
         self.lr = learning_rate
 
     def fit_and_transform(self, edge_list, const_pairs=None, weights=None,
-                          const_weights=None, steps=100, log_dir="log"):
+                          const_weights=None, steps=2000, log_dir="log"):
         self.n_nodes = n_nodes = max(chain.from_iterable(edge_list)) + 1
         self.n_edges = n_edges = len(edge_list)
         if weights is None:
@@ -37,9 +39,14 @@ class SSCD(object):
         self.prepare_calculation()
         self.sess.run(self.init_op)
         self.writer = tf.train.SummaryWriter(log_dir, self.sess.graph_def)
+        cost = None
         for s in range(steps):
             cost, sm, _ = self.sess.run([self.cost, self.summary, self.opt])
+            #print("Cost: " + str(cost))
             self.writer.add_summary(sm, s)
+        H = self.get_H()
+        self.best_cost = cost
+        return H
 
     def prepare_calculation(self):
         self.graph = tf.Graph()
@@ -69,8 +76,10 @@ class SSCD(object):
                                                    initializer=initializer)
             self.H_root = H_root = tf.get_variable("H_root", shape=[n_nodes, K],
                                                    initializer=initializer)
-            self.W = W = tf.mul(W_root, W_root, name="W")
-            self.H = H = tf.mul(H_root, H_root, name="H")
+            #self.W = W = tf.mul(W_root, W_root, name="W")
+            self.W = W = tf.abs(W_root)
+            #self.H = H = tf.mul(H_root, H_root, name="H")
+            self.H = H = tf.abs(H_root)
 
             self.loss = loss = self.loss_LSE(A, W, H)
             self.reg_term = reg_term = self.regulation_term(H, L)
@@ -91,6 +100,15 @@ class SSCD(object):
     def get_latent_vectors(self):
         return self.sess.run(self.H)
 
+    def get_H(self):
+        return self.sess.run(self.H)
+
+    def get_W(self):
+        return self.sess.run(self.W)
+
+    def get_A(self):
+        return self.sess.run(self.A)
+
     @classmethod
     def loss_LSE(cls, A, W, H):
         WH = tf.matmul(W, H, transpose_b=True, name="WH")
@@ -108,11 +126,17 @@ if __name__ == '__main__':
     os.system("rm -rf log")
     edge_list = pd.read_pickle("data/karate.pkl")
     correct = pd.read_pickle("data/karate_com.pkl")
-    const = [(6,7), (30,31)]
+    const = [(1,2),(2,3),(32,33),(19,21)]
 
-    model = SSCD(2)
+    model = SSCD(K=2, learning_rate=1.0)
 
-    model.fit_and_transform(edge_list, const, steps=200)
+    H = model.fit_and_transform(edge_list, const, steps=100)
+    W = np.matrix(model.get_W())
+    H = np.matrix(H)
+    A = model.get_A()
+    loss = np.power(A - W * H.T, 2).sum()
+    print(loss)
     km = KMeans(2)
     H = model.get_latent_vectors()
     labels = km.fit_predict(H)
+    labels2 = H.argmax(axis=1)
