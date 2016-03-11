@@ -47,8 +47,9 @@ class UpdateElem(object) :
     self._lambda = tf.constant(l, dtype=tf.float32, name="lambda")
     # Intialize W, H with truncated normal distribution values
     # The mean is 1.0 and stddev is 0.5 to ensure only positive number is choosen
-    self._W = tf.Variable(tf.truncated_normal([A.shape[0],k], mean=1.0, stddev=0.5), name="W")
-    self._H = tf.Variable(tf.truncated_normal([A.shape[0],k], mean=1.0, stddev=0.5), name="H")
+    N = A.sum()
+    self._W = tf.Variable(tf.random_uniform([A.shape[0],k], minval=0.0, maxval=2/N ), name="W")
+    self._H = tf.Variable(tf.random_uniform([A.shape[0],k], minval=0.0, maxval=2/N), name="H")
     # Add update nodes compute denominator and numerator separately
     ## Update W
     w_nume = tf.matmul(self._A, self._H)

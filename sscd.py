@@ -9,15 +9,15 @@ import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.metrics import normalized_mutual_info_score
 
-from Update import UpdateElem
 
 class SSCD(object):
     """Unified Semi-Supervised Community Detection"""
 
-    def __init__(self, K, mlambda=1.0, learning_rate=0.01):
+    def __init__(self, K, mlambda=1.0, learning_rate=0.01, threads=8):
         self.K = K
         self.mlambda = mlambda
         self.lr = learning_rate
+        self.threads = threads
 
     def fit_and_transform(self, edge_list, const_pairs=None, weights=None,
                           const_weights=None, steps=2000, log_dir="log"):
@@ -46,6 +46,7 @@ class SSCD(object):
             self.writer.add_summary(sm, s)
         H = self.get_H()
         self.best_cost = cost
+        print("Best Cost: " + str(cost))
         return H
 
     def prepare_calculation(self):
@@ -69,32 +70,36 @@ class SSCD(object):
                                             sparse_values=const_weights)
             self.D = D = tf.diag(tf.reduce_sum(O, reduction_indices=1))
             self.L = L = D - O
+            scaler = np.sqrt(weights.sum())
+            #scaler = weights.sum()
 
-            initializer = tf.truncated_normal_initializer(mean=0.0,
-                                                          stddev=1.0)
+            initializer = tf.random_uniform_initializer(maxval=1/scaler)
             self.W_root = W_root = tf.get_variable("W_root", shape=[n_nodes, K],
                                                    initializer=initializer)
             self.H_root = H_root = tf.get_variable("H_root", shape=[n_nodes, K],
                                                    initializer=initializer)
-            #self.W = W = tf.mul(W_root, W_root, name="W")
-            self.W = W = tf.abs(W_root)
-            #self.H = H = tf.mul(H_root, H_root, name="H")
-            self.H = H = tf.abs(H_root)
+            self.W = W = tf.pow(W_root, 2, name="W")
+            #self.W = W = tf.abs(W_root, name="W")
+            self.H = H = tf.pow(H_root, 2, name="H")
+            #self.H = H = tf.abs(H_root, name="H")
 
             self.loss = loss = self.loss_LSE(A, W, H)
-            self.reg_term = reg_term = self.regulation_term(H, L)
+            self.sup_term = sup_term = self.supervisor_term(H, L)
 
-            self.cost = cost = loss + mlambda * reg_term
+            self.cost = cost = loss + mlambda * sup_term
 
             tf.scalar_summary("loss", loss)
-            tf.scalar_summary("reg_term", reg_term)
+            tf.scalar_summary("sup_term", sup_term)
             tf.scalar_summary("cost", cost)
 
             self.summary = tf.merge_all_summaries()
 
             self.opt = tf.train.AdamOptimizer(self.lr).minimize(cost)
+            config = tf.ConfigProto(inter_op_parallelism_threads=self.threads,
+                                  intra_op_parallelism_threads=self.threads)
 
-            self.sess = tf.Session()
+
+            self.sess = tf.Session(config=config)
             self.init_op = tf.initialize_all_variables()
 
     def get_latent_vectors(self):
@@ -116,11 +121,11 @@ class SSCD(object):
         return loss
 
     @classmethod
-    def regulation_term(cls, H, L):
+    def supervisor_term(cls, H, L):
         HLH = tf.matmul(tf.matmul(H, L, transpose_a=True), H)
         mask = tf.diag(tf.ones([H.get_shape()[1]]))
-        reg_term = tf.reduce_sum(HLH * mask)
-        return reg_term
+        sup_term = tf.reduce_sum(HLH * mask)
+        return sup_term
 
 if __name__ == '__main__':
     os.system("rm -rf log")
@@ -129,14 +134,23 @@ if __name__ == '__main__':
     const = [(1,2),(2,3),(32,33),(19,21)]
 
     model = SSCD(K=2, learning_rate=1.0)
-
+    start = time.time()
     H = model.fit_and_transform(edge_list, const, steps=100)
+    constime = time.time() - start
     W = np.matrix(model.get_W())
     H = np.matrix(H)
     A = model.get_A()
     loss = np.power(A - W * H.T, 2).sum()
     print(loss)
+
     km = KMeans(2)
     H = model.get_latent_vectors()
     labels = km.fit_predict(H)
     labels2 = H.argmax(axis=1)
+    
+    nmi = normalized_mutual_info_score(labels, correct)
+    nmi2 = normalized_mutual_info_score(labels2, correct)
+
+    print("NMI by KMeans: " + str(nmi))
+    print("NMI by argmax: " + str(nmi2))
+    print("Time: " + str(constime))

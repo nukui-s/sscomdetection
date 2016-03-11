@@ -3,6 +3,7 @@ import scipy.sparse as ssp
 import tensorflow as tf
 from Update import UpdateElem
 import pandas as pd
+
 from itertools import chain
 from sklearn.cluster import KMeans
 from sklearn.metrics import normalized_mutual_info_score
@@ -33,7 +34,7 @@ class SSNMF(object):
         self.const_pairs = sorted(const_pairs, key=lambda x: (x[0], x[1]))
         self.A = A = self.convert_edge_list_into_dense(edge_list, n_nodes)
         self.O = O = self.convert_edge_list_into_dense(const_pairs, n_nodes)
-        D = np.diag(A.sum(axis=1))
+        D = np.diag(O.sum(axis=1))
         self.updater = updater = UpdateElem()
         graph = tf.Graph()
         with graph.as_default():
@@ -44,7 +45,6 @@ class SSNMF(object):
         for s in range(steps):
                 self.sess.run(updater.assign_H_node())
                 self.sess.run(updater.assign_W_node())
-                print(self.sess.run(updater.loss))
         return self.get_H()
 
     @classmethod

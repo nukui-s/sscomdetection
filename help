@@ -1,0 +1,42 @@
+使い方: shutdown [OPTION]... TIME [MESSAGE]
+システムを停止しています。
+
+Options:
+  -r                          reboot after shutdown
+  -h                          halt or power off after shutdown
+  -H                          halt after shutdown (implies -h)
+  -P                          power off after shutdown (implies -h)
+  -c                          cancel a running shutdown
+  -k                          only send warnings, don't shutdown
+  -q, --quiet                 reduce output to errors only
+  -v, --verbose               increase output to include informational messages
+      --help                  display this help and exit
+      --version               output version information and exit
+
+TIME
+にはさまざまなフォーマットが使え、もっとも一般的なの�
+��、システムを直ちに落す 'now' という単語です。
+他の有効なフォーマットとしては、シャットダウンまでの�
+��を指定する +m や 24時間制で時刻を指定する hh:mm
+があります。
+
+ログイン中のユーザーの端末には警告メッセージが表示さ�
+��、これには任意の MESSAGE を含めることもできます。-k
+オプションを使用すると、実際にシステムを落とすことな�
+��メッセージを送れます。
+
+TIME
+を指定した場合、コマンドはシャットダウンが起動される�
+��でフォアグランドに残ります。Control+C もしくは -c
+オプションを付ければ他のユーザーでもキャンセルが可能�
+��す。
+
+デフォルトでは、システムはメンテナンス
+(シングルユーザー) モードに落ちますが、-r もしくは -h
+オプションで再起動もしくはシステム停止を指定できます�
+��-h オブションに -H か -P
+を付ければさらに変更が可能で、システム停止するか電源�
+��切るか指定できます。デフォルトの動作についてはシャ�
+�トダウンスクリプトの内容次第です。
+
+Report bugs to <upstart-devel@lists.ubuntu.com>
