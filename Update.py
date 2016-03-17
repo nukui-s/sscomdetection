@@ -52,20 +52,21 @@ class UpdateElem(object) :
     self._H = tf.Variable(tf.random_uniform([A.shape[0],k], minval=0.0, maxval=2/N), name="H")
     # Add update nodes compute denominator and numerator separately
     ## Update W
-    w_nume = tf.matmul(self._A, self._H)
+    w_nume = tf.matmul(self._A, self._H, a_is_sparse=True)
     w_deno_temp = tf.matmul(self._H, self._H, transpose_a = True)
     w_deno = tf.matmul(self._W, w_deno_temp)
     w_update_factor = tf.div(w_nume, w_deno + 10e-8)
     self._updateW = tf.mul(w_update_factor, self._W)
     self._assignW = self._W.assign(self._updateW)
     ## Update H
-    h_nume_a = tf.matmul(self._A, self._W, transpose_a = True)
-    h_nume_b_temp = tf.matmul(self._O, self._H)
+    h_nume_a = tf.matmul(self._A, self._W, transpose_a = True,
+                         a_is_sparse=True)
+    h_nume_b_temp = tf.matmul(self._O, self._H, a_is_sparse=True)
     h_nume_b = tf.mul(self._lambda, h_nume_b_temp)
     h_nume = tf.add(h_nume_a, h_nume_b)
     h_deno_a_temp = tf.matmul(self._W, self._W, transpose_a = True)
     h_deno_a = tf.matmul(self._H, h_deno_a_temp)
-    h_deno_b_temp = tf.matmul(self._D, self._H)
+    h_deno_b_temp = tf.matmul(self._D, self._H, a_is_sparse=True)
     h_deno_b = tf.mul(self._lambda, h_deno_b_temp)
     h_deno = tf.add(h_deno_a, h_deno_b)
     h_update_factor = tf.div(h_nume, h_deno + 10e-8)
@@ -74,19 +75,30 @@ class UpdateElem(object) :
 
     self.loss = tf.nn.l2_loss(self._A - tf.matmul(self._W, self._H,
                                                   transpose_b=True))
+    L = self._D - self._O
+    self.reg = self.supervisor_term(self._H, L)
+    self.cost = self.loss + self._lambda * self.reg
                                                   
   # Return the node that calculates new H value
   def update_H_node (self) :
-    return self._updateH
+      return self._updateH
 
   # Return the node that calculates new W value
   def update_W_node (self) :
-    return self._updateW
+      return self._updateW
 
   # Return the node that assign H to the new value
   def assign_H_node (self) :
-    return self._assignH
+      return self._assignH
 
   # Return the node that assign W to the new value
   def assign_W_node (self) :
-    return self._assignW
+      return self._assignW
+
+  @classmethod
+  def supervisor_term(cls, H, L):
+      HLH = tf.matmul(tf.matmul(H, L, transpose_a=True, b_is_sparse=True), H)
+      mask = tf.diag(tf.ones([H.get_shape()[1]]))
+      sup_term = tf.reduce_sum(HLH * mask)
+      return sup_term
+

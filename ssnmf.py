@@ -16,13 +16,14 @@ class SSNMF(object):
         self.mlambda = mlambda
 
     def fit_and_transform(self, edge_list, const_pairs=None, weights=None,
-                          const_weights=None, steps=2000, log_dir="log"):
+                          const_weights=None, steps=2000, log_dir="log",
+                          threshold=0.001):
         self.n_nodes = n_nodes = max(chain.from_iterable(edge_list)) + 1
         self.n_edges = n_edges = len(edge_list)
         if weights is None:
             weights = np.ones(n_edges).astype(np.float32)
         edge_list = [(e[0],e[1],w) for e, w in zip(edge_list, weights)]
-        edge_list = [(j, i, w) for i, j, w in edge_list]
+        edge_list = edge_list + [(j, i, w) for i, j, w in edge_list]
         self.edge_list = sorted(edge_list, key=lambda x: (x[0], x[1]))
         if const_pairs is None:
             const_pairs = []
@@ -31,6 +32,7 @@ class SSNMF(object):
         const_pairs = [(c[0], c[1], w) for c, w
                             in zip(const_pairs, const_weights)]
         const_pairs = const_pairs + [(j, i, w) for i, j, w in const_pairs]
+
         self.const_pairs = sorted(const_pairs, key=lambda x: (x[0], x[1]))
         self.A = A = self.convert_edge_list_into_dense(edge_list, n_nodes)
         self.O = O = self.convert_edge_list_into_dense(const_pairs, n_nodes)
@@ -42,10 +44,21 @@ class SSNMF(object):
             init_op = tf.initialize_all_variables()
             self.sess = tf.Session()
             self.sess.run(init_op)
+        pre_cost = -1
+        cost_list = []
         for s in range(steps):
-                self.sess.run(updater.assign_H_node())
-                self.sess.run(updater.assign_W_node())
-        return self.get_H()
+            self.sess.run(updater.assign_W_node())
+            self.sess.run(updater.assign_H_node())
+            cost = self.sess.run(updater.cost)
+            if abs(cost - pre_cost) < threshold:
+                break
+            pre_cost = cost
+            cost_list.append(cost)
+            print(cost)
+        print("Steps: " + str(s+1))
+        H = self.get_H()
+        W = self.get_W()
+        return H, cost_list
 
     @classmethod
     def convert_edge_list_into_dense(cls, edge_list, n_nodes):
