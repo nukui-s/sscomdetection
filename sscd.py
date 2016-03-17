@@ -13,7 +13,8 @@ from sklearn.metrics import normalized_mutual_info_score
 class SSCD(object):
     """Unified Semi-Supervised Community Detection"""
 
-    def __init__(self, K, mlambda=1.0, learning_rate=0.01, threads=8):
+    def __init__(self, K, mlambda=1.0, method="abs_adam",learning_rate=0.01, 
+                threads=8):
         self.K = K
         self.mlambda = mlambda
         self.lr = learning_rate
@@ -74,14 +75,12 @@ class SSCD(object):
             #scaler = weights.sum()
 
             initializer = tf.random_uniform_initializer(maxval=1/scaler)
-            self.W_root = W_root = tf.get_variable("W_root", shape=[n_nodes, K],
+            self.W_var = W_var = tf.get_variable("W_var", shape=[n_nodes, K],
                                                    initializer=initializer)
-            self.H_root = H_root = tf.get_variable("H_root", shape=[n_nodes, K],
-                                                   initializer=initializer)
-            self.W = W = tf.pow(W_root, 2, name="W")
-            #self.W = W = tf.abs(W_root, name="W")
-            self.H = H = tf.pow(H_root, 2, name="H")
-            #self.H = H = tf.abs(H_root, name="H")
+            self.H_var = H_var = tf.get_variable("H_var", shape=[n_nodes, K],
+                                                  initializer=initializer)
+            self.W = W = tf.abs(W_var, name="W")
+            self.H = H = tf.abs(H_var, name="H")
 
             self.loss = loss = self.loss_LSE(A, W, H)
             self.sup_term = sup_term = self.supervisor_term(H, L)
@@ -101,6 +100,18 @@ class SSCD(object):
 
             self.sess = tf.Session(config=config)
             self.init_op = tf.initialize_all_variables()
+
+    def get_prosessed_W_H(self, W_var, H_var):
+        if self.method == "abs_adam":
+            W = tf.abs(W_var, "W")
+            H = tf.abs(H_var, "H")
+        elif self.method == "clipped_adam":
+            W = W_var
+            H = H_var
+        else:
+            raise ValueError("``method'' must be 'abs_adam' or 'clipped_adam'")
+        return W, H
+        
 
     def get_latent_vectors(self):
         return self.sess.run(self.H)
