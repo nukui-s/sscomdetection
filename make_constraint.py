@@ -1,3 +1,4 @@
+import sys
 import networkx as nx
 import csv
 import random
@@ -10,7 +11,6 @@ from sscd import SSCD
 from ssnmf import SSNMF
 import scipy.sparse as ssp
 from sklearn.metrics import normalized_mutual_info_score
-
 
 def impose_constraint(correct_label, max_density=1.0):
     correct_label = list(correct_label)
@@ -32,29 +32,41 @@ def impose_constraint(correct_label, max_density=1.0):
         n2, c2 = nc2
         if c1 == c2:
             const_pairs.append((n1,n2))
-        count += 1
+            count += 1
         if count > n_pairs: break
-    return const_pairs
+    return const_pairs, all_n_pairs
+
 
 def export_const(path, c_pairs):
     writer = csv.writer(open(path, "w"))
     writer.writerows(c_pairs)
 
+#data_label = "dolphins"
 #data_label = "polbooks"
-data_label = "karate"
-data_path = "data/%s_edge.pkl"%(data_label)
-label_path = "data/%s_label.pkl"%(data_label)
+#data_label = "polblogs"
+#data_label = "football"
+#data_label = "dolphins"
+#data_label = "karate"
+#data_label = "gn_32_4"
+#data_label = "LRF"
+#data_label = "friendship"
 
-edge_list = pd.read_pickle(data_path)
-correct_label = pd.read_pickle(label_path)
+def make_constraints(data_label):
+    data_path = "data/%s_edge.pkl"%(data_label)
+    label_path = "data/%s_label.pkl"%(data_label)
 
-const_pairs = impose_constraint(correct_label)
-densities = range(10)
+    edge_list = pd.read_pickle(data_path)
+    correct_label = pd.read_pickle(label_path)
+
+    const_pairs, all_n_pairs = impose_constraint(correct_label, 0.5)
+    densities = list(range(15+1)) + [20,30]
+
+    for d in densities:
+        n_c = int(max(1, all_n_pairs*d / 100))
+        path = "data/const/const_"+data_label+"_"+str(d)+".pkl"
+        c_pairs = const_pairs[:n_c]
+        pd.to_pickle(c_pairs, path)
 
 
-for d in densities:
-    n_c = int(max(1, len(const_pairs)*d / 5))
-    path = "data/const_"+data_label+"_"+str(d)+".pkl"
-    c_pairs = const_pairs[:n_c]
-    pd.to_pickle(c_pairs, path)
-
+if __name__=="__main__":
+    make_constraints(sys.argv[1])
