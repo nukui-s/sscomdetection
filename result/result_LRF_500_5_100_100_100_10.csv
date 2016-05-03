@@ -1,0 +1,3 @@
+model,mean time,std time,mean nmi,std nmi,best_cost,best_nmi
+abs_adam,4.57718586922,0.0,1.0,0.0,0.00548201171875,1.0
+update_rule,7.55905795097,0.0,0.646657297244,0.0,0.00587807861328,0.646657297244

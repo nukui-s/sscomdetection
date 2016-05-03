@@ -1,0 +1,2 @@
+model,mean time,std time,mean nmi,std nmi
+clip_adam,47.6481356621,0.0,1.0,0.0
