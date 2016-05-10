@@ -7,7 +7,6 @@ import os
 import sys
 from string import Template
 from settings import *
-import seaborn
 
 colors = {"abs_adam":"r", "abs_sgd":"g", "clip_sgd":"c", "clip_adam":"m","update_rule":"b"}
 markers = {"abs_adam":"o", "abs_sgd":"v", "clip_sgd":"^", "clip_adam":"8","update_rule":"*"}
@@ -51,13 +50,14 @@ if __name__=="__main__":
         mkr = markers[name]
         draw_line(label, clr, mkr, d_list, nmi_list, std_list)
 
+    margin = 0.005
     plt.xlabel("used priors", fontsize=26)
     plt.ylabel("NMI", fontsize=26)
-    plt.xlim([0,max(densities)*0.01])
+    plt.xlim([-margin, max(densities)*0.01+margin])
     plt.ylim([-0.05,1.05])
-    plt.legend(loc="best", prop={"size":20})
+    plt.legend(loc="best", prop={"size":18})
     plt.savefig("figs/%s_nmi.png"%(data_label))
-    #plt.show()
+    plt.show()
 
     plt.clf()
 
@@ -73,8 +73,8 @@ if __name__=="__main__":
 
     plt.xlabel("used priors", fontsize=26)
     plt.ylabel("Elapsed Time", fontsize=26)
-    plt.xlim([0,max(densities)*0.01])
-    plt.legend(loc="best", prop={"size":20})
+    plt.xlim([-margin,max(densities)*0.01 + margin])
+    plt.legend(loc="best", prop={"size":18})
     plt.savefig("figs/%s_time.png"%(data_label))
-    #plt.show()
+    plt.show()
 

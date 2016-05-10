@@ -50,14 +50,17 @@ class UpdateElem(object) :
     N = A.sum()
     self._W = tf.Variable(tf.random_uniform([A.shape[0],k], minval=0.0, maxval=2/N ), name="W")
     self._H = tf.Variable(tf.random_uniform([A.shape[0],k], minval=0.0, maxval=2/N), name="H")
+    self._W_tmp = tf.Variable(tf.random_uniform([A.shape[0],k], minval=0.0, maxval=2/N ), name="W_tmp")
+    self._H_tmp = tf.Variable(tf.random_uniform([A.shape[0],k], minval=0.0, maxval=2/N), name="H_tmp")
     # Add update nodes compute denominator and numerator separately
     ## Update W
     w_nume = tf.matmul(self._A, self._H, a_is_sparse=True)
     w_deno_temp = tf.matmul(self._H, self._H, transpose_a = True)
     w_deno = tf.matmul(self._W, w_deno_temp)
     w_update_factor = tf.div(w_nume, w_deno + 10e-8)
-    self._updateW = tf.mul(w_update_factor, self._W)
-    self._assignW = self._W.assign(self._updateW)
+    W_new = tf.mul(w_update_factor, self._W)
+    self._updateW = self._W_tmp.assign(W_new)
+    self._assignW = self._W.assign(self._W_tmp)
     ## Update H
     h_nume_a = tf.matmul(self._A, self._W, transpose_a = True,
                          a_is_sparse=True)
@@ -70,8 +73,9 @@ class UpdateElem(object) :
     h_deno_b = tf.mul(self._lambda, h_deno_b_temp)
     h_deno = tf.add(h_deno_a, h_deno_b)
     h_update_factor = tf.div(h_nume, h_deno + 10e-8)
-    self._updateH = tf.mul(h_update_factor, self._H)
-    self._assignH = self._H.assign(self._updateH)
+    H_new = tf.mul(h_update_factor, self._H)
+    self._updateH = self._H_tmp.assign(H_new)
+    self._assignH = self._H.assign(self._H_tmp)
 
     self.loss = tf.nn.l2_loss(self._A - tf.matmul(self._W, self._H,
                                                   transpose_b=True))

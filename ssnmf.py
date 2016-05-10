@@ -47,7 +47,9 @@ class SSNMF(object):
         pre_cost = -1
         cost_list = []
         for s in range(steps):
+            self.sess.run(updater.update_W_node())
             self.sess.run(updater.assign_W_node())
+            self.sess.run(updater.update_H_node())
             self.sess.run(updater.assign_H_node())
             cost = self.sess.run(updater.cost)
             if abs(cost - pre_cost) < threshold:
