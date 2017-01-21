@@ -41,7 +41,7 @@ class SSNMF(object):
         graph = tf.Graph()
         with graph.as_default():
             updater.add_semi_supervised_rule(A, O, D, self.K, self.mlambda)
-            init_op = tf.initialize_all_variables()
+            init_op = tf.global_variable_initializer()
             self.sess = tf.Session()
             self.sess.run(init_op)
         pre_cost = -1

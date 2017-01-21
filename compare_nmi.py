@@ -11,10 +11,11 @@ from sscd import SSCD
 from ssnmf import SSNMF
 import scipy.sparse as ssp
 from sklearn.metrics import normalized_mutual_info_score
-from ssscd import SynmetricSSCD
+from ssscd import SynmetricSSCD, KLSynmetricSSCD
 from settings import *
 
 
+np.random.seed(42)
 
 
 """Functions definitions"""
@@ -62,14 +63,17 @@ if __name__=="__main__":
         dense_label = str(int(density))
         data_path = "data/%s_edge.pkl"%(data_label)
         label_path = "data/%s_label.pkl"%(data_label)
-        const_path = "data/const/const_%s_%d.pkl"%(data_label, density)
+        const_path = "data/const/degree_%s_%d.pkl"%(data_label, density)
 
         edge_list = pd.read_pickle(data_path)
         correct_label = pd.read_pickle(label_path)
-        mlambda = 1.0
         const = pd.read_pickle(const_path)
 
+        if len(const) == 0:
+            const = None
+
         abs_adam = SynmetricSSCD(K, method="adam", positivate="abs", mlambda=mlambda, learning_rate=lr_adam, threads=threads)
+        kl_adam = KLSynmetricSSCD(K, method="adam", positivate="abs", mlambda=mlambda, learning_rate=lr_adam, threads=threads)
         clip_adam = SynmetricSSCD(K, method="adam", positivate="clip", mlambda=mlambda, learning_rate=lr_adam, threads=threads)
         abs_sgd = SynmetricSSCD(K, method="sgd", positivate="abs", mlambda=mlambda, learning_rate=lr_sgd, threads=threads)
         clip_sgd = SynmetricSSCD(K, method="sgd", positivate="clip", mlambda=mlambda, learning_rate=lr_sgd, threads=threads)
@@ -78,8 +82,8 @@ if __name__=="__main__":
         #abs_sgd = SSCD(K, method="sgd", positivate="abs", mlambda=mlambda, learning_rate=lr_sgd, threads=threads)
         #clip_sgd = SSCD(K, method="sgd", positivate="clip", mlambda=mlambda, learning_rate=lr_sgd, threads=threads)
         update_rule = SSCD(K, mlambda=mlambda, method="mult", threads=threads)
-        #models = {"abs_adam":abs_adam}
-        all_models = {"update_rule":update_rule, "abs_adam": abs_adam, "abs_sgd": abs_sgd, "clip_adam":clip_adam, "clip_sgd":clip_sgd}
+        all_models = {"update_rule":update_rule, "abs_adam": abs_adam, "abs_sgd": abs_sgd,
+                    "clip_adam":clip_adam, "clip_sgd":clip_sgd, "kl_adam": kl_adam}
         #models = {"update_rule":update_rule, "abs_adam": abs_adam, "clip_adam":clip_adam}
         #models = {"abs_adam": abs_adam, "update_rule":update_rule}
         models = {name: all_models[name] for name in used_models}
@@ -112,7 +116,7 @@ if __name__=="__main__":
                 best_costs[name].append(best_cost)
                 #import pdb; pdb.set_trace()
 
-        result_path = "result/result_"+data_label+"_" + dense_label+".csv"
+        result_path = "result/"+exp_label+"_" + dense_label+".csv"
         model_names = sorted(list(models.keys()))
         with open(result_path, "w") as f:
             writer = csv.writer(f)

@@ -48,9 +48,10 @@ class SSCD(object):
         self.const_pairs = sorted(const_pairs, key=lambda x: (x[0], x[1]))
         self.prepare_calculation()
         self.sess.run(self.init_op)
-        self.writer = tf.train.SummaryWriter(log_dir, self.sess.graph_def)
+        self.writer = tf.train.SummaryWriter(log_dir, self.sess.graph)
         pre_cost = -1
         cost_list = []
+        H_list = []
         for s in range(steps):
             cost, sm, _ = self.sess.run([self.cost, self.summary, self.opt])
             sup_term = self.sess.run(self.sup_term)
@@ -60,12 +61,15 @@ class SSCD(object):
                 break
             pre_cost = mean_cost
             cost_list.append(mean_cost)
+            H = self.get_H()
+            H_list.append(H)
+
         print("Step: " + str(s+1))
         H = self.get_H()
         W = self.get_W()
         self.best_cost = cost
         print("Best Cost: " + str(mean_cost))
-        return W, H, mean_cost, cost_list
+        return W, H, mean_cost, cost_list, H_list
 
     def prepare_calculation(self):
         self.graph = tf.Graph()
@@ -118,7 +122,7 @@ class SSCD(object):
         config = tf.ConfigProto(inter_op_parallelism_threads=self.threads,
                                 intra_op_parallelism_threads=self.threads)
         self.sess = tf.Session(config=config)
-        self.init_op = tf.initialize_all_variables()
+        self.init_op = tf.global_variables_initializer()
 
 
     def prepare_gradient(self, H_var, W_var, cost):

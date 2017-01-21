@@ -15,7 +15,9 @@ from settings import *
 
 cmd =Template("""./binary_networks/benchmark -k $k -N $N -mu $mu -t1 $t1 -t2 $t2 -minc $minc -maxc $maxc -maxk $maxk""")
 
-ret = os.system(cmd.substitute(N=N, k=k, mu=mu, t1=t1, t2=t2, maxc=maxc, minc=minc, maxk=maxk))
+query = cmd.substitute(N=N, k=k, mu=mu, t1=t1, t2=t2, maxc=maxc, minc=minc, maxk=maxk)
+print(query)
+ret = os.system(query)
 if ret != 0:
     raise SystemError
     quit(1)

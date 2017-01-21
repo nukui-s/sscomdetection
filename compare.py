@@ -13,6 +13,7 @@ import time
 from constrain import constrain_label
 
 
+
 def evaluate_label(A, H, W, corr, K):
     label = H.argmax(axis=1)
     km = KMeans(K)
@@ -27,6 +28,7 @@ def evaluate_label(A, H, W, corr, K):
     loss = np.power(A - W * H.T, 2).sum()
     print(loss)
     return nmi, nmi2, loss
+
 
 if __name__ == '__main__':
     os.system("rm -rf log")
@@ -56,7 +58,7 @@ if __name__ == '__main__':
         #Gradient based method
         model = SSCD(K=K, learning_rate=0.1, mlambda=1.0, threads=1)
         start = time.time()
-        H = model.fit_and_transform(edge_list, const, steps=100)
+        W, H, mean_cost, cost_list = model.fit_and_transform(edge_list, const, steps=100)
         constime = time.time() - start
         W = model.get_W()
         A = model.get_A()
@@ -71,7 +73,7 @@ if __name__ == '__main__':
         #Update rule method
         ssnmf = SSNMF(K, mlambda=1.0)
         start = time.time()
-        H = ssnmf.fit_and_transform(edge_list, const, steps=50)
+        W, H, mean_cost, cost_list = ssnmf.fit_and_transform(edge_list, const, steps=50)
         W = ssnmf.get_W()
         constime = time.time() - start
         evaluate_label(A, H, W, correct, K)
@@ -127,5 +129,3 @@ if __name__ == '__main__':
         writer = csv.writer(f)
         for k, v in result.items():
             writer.writerow((k,v))
-
-

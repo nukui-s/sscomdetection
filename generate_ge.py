@@ -23,9 +23,9 @@ def generate_gn_graph(n_node, n_com, p_in, p_out):
 
 
 if __name__=='__main__':
-    n = 1000
-    c = 4
-    p_in = 0.01
+    n = 90
+    c = 3
+    p_in = 0.1
     p_out = 0.001
 
     name = "gn_%s_%s"%(str(n),str(c))

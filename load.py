@@ -64,17 +64,21 @@ def save_labels(data_name, labels):
     pd.to_pickle(labels, path)
 
 if __name__ == '__main__':
-    data_name = "dblp"
-    gml_file = "data/friendship.graphml"
-    edge_file = "data/friendship_edge.csv"
-    edge_file = "data/dblp_edge.txt"
-    label_file = "data/friendship_meta.txt"
+    data_name = "football"
+    gml_file = "data/football.gml"
+    #edge_file = "data/dolphins_edge.csv"
+    #edge_file = "data/dolphins_edge.txt"
 
     #elist, labels = load_graphml(gml_file, attr_name="ground truth")
-    #elist, labels = load_friendship(edge_file, label_file)
-    elist = load_dblp(edge_file)
-    
-    save_elist(data_name, elist)
+
+    elist, labels = load_gml(gml_file)
 
     save_elist(data_name, elist)
+    save_labels(data_name, labels)
+    #elist, labels = load_friendship(edge_file, label_file)
+    #elist = load_dblp(edge_file)
+
+    #save_elist(data_name, elist)
+
+    #save_elist(data_name, elist)
     #save_labels(data_name, labels)

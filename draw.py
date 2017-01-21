@@ -8,27 +8,33 @@ import sys
 from string import Template
 from settings import *
 
-colors = {"abs_adam":"r", "abs_sgd":"g", "clip_sgd":"c", "clip_adam":"m","update_rule":"b"}
-markers = {"abs_adam":"o", "abs_sgd":"v", "clip_sgd":"^", "clip_adam":"8","update_rule":"*"}
+colors = {"abs_adam":"r", "abs_sgd":"g", "clip_sgd":"c", "clip_adam":"m","update_rule":"b",
+          "kl_adam": 'k'}
+markers = {"abs_adam":"o", "abs_sgd":"v", "clip_sgd":"^", "clip_adam":"8","update_rule":"*",
+          "kl_adam": "<"}
 
 
-label_dict = {"abs_adam":"Adam_abs", "clip_adam":"Adam_proj", 
-                "abs_sgd":"GD_abs","clip_sgd":"GD_proj","update_rule":"Mult"}
+label_dict = {"abs_adam":"Adam(abs)", "clip_adam":"Adam(PG)", 
+              "abs_sgd":"GD(abs)","clip_sgd":"GD(PG)","update_rule":"Mult",
+              "kl_adam": "KL/Adam(abs)"}
 
 
 def draw_line(model, clr, mkr, densities, nmi_list, std_list):
+    print(densities)
+    print(nmi_list)
     plt.plot(densities, nmi_list, marker=mkr,markersize=12,
              color=clr, linewidth=2.0, label=model)
 
 
-def load_model_nmi(data_name, model, densities):
+def load_model_nmi(exp_name, model, densities):
     nmi_list = []
     time_list = []
     std_list = []
     d_list = []
     for d in densities:
-        path = os.path.join("result","result_"+data_name+"_"+str(d)+".csv")
+        path = os.path.join("result", exp_name+"_"+str(d)+".csv")
         reader = csv.reader(open(path))
+        #for name, meantime, stdtime, nmi, std, best_cost, best_nmi in reader:
         for name, meantime, stdtime, nmi, std, best_cost, best_nmi, best_time in reader:
             if name == model:
                 nmi_list.append(float(best_nmi))
@@ -43,7 +49,7 @@ if __name__=="__main__":
 
     fig = plt.figure(1)
     for name in used_models:
-        d_list, nmi_list, std_list, time_list = load_model_nmi(data_label, name, densities)
+        d_list, nmi_list, std_list, time_list = load_model_nmi(exp_label, name, densities)
         if len(d_list) == 0: continue
         label = label_dict[name]
         clr = colors[name]
@@ -60,7 +66,6 @@ if __name__=="__main__":
     plt.show()
 
     plt.clf()
-
 
     fig2 = plt.figure(2)
     for name in used_models:

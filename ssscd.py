@@ -10,6 +10,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import normalized_mutual_info_score
 from sscd import SSCD
 
+
 class SynmetricSSCD(SSCD):
 
     def prepare_calculation(self):
@@ -44,14 +45,7 @@ class SynmetricSSCD(SSCD):
             self.H = H = self.get_positive_variable(H_var)
             self.W = H
 
-
-            #Normalize H along to row
-            I = tf.diag(tf.ones([n_nodes]))
-            H_diag_inv = tf.matmul(I,
-                                  tf.expand_dims(
-                                      1/tf.reduce_sum(H, reduction_indices=1),
-                                      1))
-            H_norm = H_diag_inv * H
+            H_norm = self.normalize_H(H, n_nodes)
 
             self.loss = loss = self.loss_LSE(A, H)
             self.sup_term = sup_term = self.supervisor_term(H_norm, L)
@@ -76,7 +70,7 @@ class SynmetricSSCD(SSCD):
             config = tf.ConfigProto(inter_op_parallelism_threads=self.threads,
                                   intra_op_parallelism_threads=self.threads)
             self.sess = tf.Session(config=config)
-            self.init_op = tf.initialize_all_variables()
+            self.init_op = tf.global_variables_initializer()
 
 
     @classmethod
@@ -92,10 +86,29 @@ class SynmetricSSCD(SSCD):
         sup_term = tf.reduce_sum(HLH * mask)
         return sup_term
 
+    @classmethod
+    def normalize_H(cls, H, n_nodes):
+        #Normalize H along to row
+        I = tf.diag(tf.ones([n_nodes]))
+        H_diag_inv = tf.matmul(I,
+                                tf.expand_dims(
+                                    1/tf.reduce_sum(H, reduction_indices=1),
+                                    1))
+        H_norm = H_diag_inv * H
+        return H_norm
 
 
+class KLSynmetricSSCD(SynmetricSSCD):
+
+    @classmethod
+    def supervisor_term(cls, H, L):
+        loss = L * tf.matmul(H, tf.log(H + 1e-8), transpose_b=True)
+        return tf.reduce_sum(loss)
 
 
+class L2SynmetricSSCD(SynmetricSSCD):
 
-
-      
+    @classmethod
+    def normalize_H(cls, H, n_nodes):
+        # normalize H along row
+        return tf.nn.l2_normalize(H, dim=1)
