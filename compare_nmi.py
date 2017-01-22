@@ -117,7 +117,7 @@ if __name__=="__main__":
                 best_costs[name].append(best_cost)
                 #import pdb; pdb.set_trace()
 
-        result_path = "result/{}_{}.csv".format(exp_name, dense_label)
+        result_path = "result/{}_{}.csv".format(exp_name, str(dense_label))
         model_names = sorted(list(models.keys()))
         with open(result_path, "w") as f:
             writer = csv.writer(f)

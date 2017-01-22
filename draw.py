@@ -49,7 +49,7 @@ if __name__=="__main__":
 
     fig = plt.figure(1)
     for name in used_models:
-        d_list, nmi_list, std_list, time_list = load_model_nmi(exp_label, name, densities)
+        d_list, nmi_list, std_list, time_list = load_model_nmi(exp_name, name, densities)
         if len(d_list) == 0: continue
         label = label_dict[name]
         clr = colors[name]

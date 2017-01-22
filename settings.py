@@ -26,14 +26,14 @@ data_label = lrf_data_label
 #General settings
 densities =[0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
 trials = 5
-K = 4
+K = 5
 lr_adam = 0.01
 lr_sgd = 0.01
 threshold = 10e-9
 threads = 8
-used_models = ["abs_sgd","clip_sgd","clip_adam","abs_adam","update_rule"]
+used_models = ["abs_adam","update_rule"]
 #used_models = ["abs_adam", "update_rule"]
 #used_models = ["abs_adam"]
-max_iters = 100
+max_iters = 1000
 
-mlambda = 1.0
+mlambda = 10
