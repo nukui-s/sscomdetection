@@ -64,8 +64,8 @@ def save_labels(data_name, labels):
     pd.to_pickle(labels, path)
 
 if __name__ == '__main__':
-    data_name = "football"
-    gml_file = "data/football.gml"
+    data_name = "polblogs"
+    gml_file = "data/polblogs.gml"
     #edge_file = "data/dolphins_edge.csv"
     #edge_file = "data/dolphins_edge.txt"
 

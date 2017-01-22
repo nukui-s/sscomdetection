@@ -39,7 +39,7 @@ def load_model_nmi(exp_name, model, densities):
             if name == model:
                 nmi_list.append(float(best_nmi))
                 std_list.append(float(std))
-                d_list.append(d/100)
+                d_list.append(d)
                 time_list.append(float(best_time))
                 continue
     return d_list, nmi_list, std_list, time_list
@@ -56,11 +56,11 @@ if __name__=="__main__":
         mkr = markers[name]
         draw_line(label, clr, mkr, d_list, nmi_list, std_list)
 
-    margin = 0.005
+    margin = 0.00
     plt.xlabel("used priors", fontsize=26)
     plt.ylabel("NMI", fontsize=26)
-    plt.xlim([-margin, max(densities)*0.01+margin])
-    plt.ylim([-0.05,1.05])
+    plt.xlim([-margin, max(densities)+margin])
+    plt.ylim([-0.0,1.05])
     plt.legend(loc="best", prop={"size":18})
     plt.savefig("figs/%s_nmi.png"%(data_label))
     plt.show()
@@ -69,7 +69,7 @@ if __name__=="__main__":
 
     fig2 = plt.figure(2)
     for name in used_models:
-        d_list, nmi_list, std_list, time_list = load_model_nmi(data_label, name, densities)
+        d_list, nmi_list, std_list, time_list = load_model_nmi(exp_name, name, densities)
         if len(d_list) == 0: continue
         label = label_dict[name]
         clr = colors[name]
@@ -78,7 +78,7 @@ if __name__=="__main__":
 
     plt.xlabel("used priors", fontsize=26)
     plt.ylabel("Elapsed Time", fontsize=26)
-    plt.xlim([-margin,max(densities)*0.01 + margin])
+    plt.xlim([-margin,max(densities) + margin])
     plt.legend(loc="best", prop={"size":18})
     plt.savefig("figs/%s_time.png"%(data_label))
     plt.show()

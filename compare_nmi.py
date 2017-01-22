@@ -61,7 +61,7 @@ def export_cost(path, cost_list):
 if __name__=="__main__":
     os.system("rm -rf log")
     for density in densities:
-        dense_label = str(int(density))
+        dense_label = str(density)
         data_path = "data/%s_edge.pkl"%(data_label)
         label_path = "data/%s_label.pkl"%(data_label)
         const_path = const_base.format(data_label, density)
@@ -69,6 +69,7 @@ if __name__=="__main__":
         edge_list = pd.read_pickle(data_path)
         correct_label = pd.read_pickle(label_path)
         const = pd.read_pickle(const_path)
+        print(const_path)
 
         if len(const) == 0:
             const = [(0, 0)]
@@ -94,7 +95,6 @@ if __name__=="__main__":
         best_times = {}
 
         for _ in range(trials):
-            print("density: " + str(density))
             for name, model in models.items():
                 print("******************************")
                 print(name)
@@ -109,6 +109,7 @@ if __name__=="__main__":
                 nmi = calculate_nmi(H, correct_label)
                 path = "cost/" + name + "_" + data_label + ".csv"
                 export_cost(path, cost_list)
+                print("density: " + str(density))
                 print("Time: " + str(elapsed))
                 print("Loss: " + str(loss))
                 print("NMI: " + str(nmi))
@@ -134,5 +135,3 @@ if __name__=="__main__":
                 best_time = times[name][best_ind]
                 result = [name, mean_time, std_time, mean_nmi, std_nmi, best_cost, best_nmi, best_time]
                 writer.writerow(result)
-
-
