@@ -78,6 +78,36 @@ def impose_constraint_by_degree(edge_list, correct_label, ratio):
 
     return const_pairs
 
+
+def impose_pair_constraint_by_different_degree(edge_list, correct_label, ratio):
+    edge_list = np.array(edge_list)
+    assert edge_list.min() == 0
+
+    degrees_for_com = {}
+    for i, label in enumerate(correct_label):
+        degrees_for_com.setdefault(label, [])
+        d_i = (edge_list == i).sum()
+        degrees_for_com[label].append((i, d_i))
+
+    nodes_for_com = {}
+    for com, degrees in degrees_for_com.items():
+        nodes_for_com[com] = [i for i, d_i in sorted(degrees, key=lambda x: x[1])]
+
+    n_const = int(len(correct_label) * ratio)
+
+    n_const_per_com = n_const // len(nodes_for_com)
+
+    const_pairs = []
+    for nodes in nodes_for_com.values():
+        nodes1 = nodes[:n_const_per_com // 2]
+        nodes2 = reversed(nodes[-n_const_per_com // 2:])
+
+        for n1 in nodes1:
+            for n2 in nodes2:
+                const_pairs.append((n1, n2))
+
+    return const_pairs
+
     #degrees_for_label = {}
     #for node in reversed(node_sorted_by_degree):
     #    label = correct_label[node]
@@ -98,8 +128,9 @@ def make_constraints(data_label):
     densities = [0, 0.05, 0.10, 0.15, 0.2, 0.25, 0.30]
 
     for d in densities:
-        const_pairs = impose_constraint_by_degree(edge_list, correct_label, d)
-        path = "data/const/degree_"+data_label+"_"+str(d)+".pkl"
+        #const_pairs = impose_constraint_by_degree(edge_list, correct_label, d)
+        const_pairs = impose_pair_constraint_by_different_degree(edge_list, correct_label, d)
+        path = "data/const/diff_degree_"+data_label+"_"+str(d)+".pkl"
         #c_pairs = const_pairs[:n_c]
         pd.to_pickle(const_pairs, path)
 

@@ -15,6 +15,7 @@ import scipy.sparse as ssp
 from sklearn.metrics import normalized_mutual_info_score
 from ssscd import SynmetricSSCD, KLSynmetricSSCD
 from settings import *
+from sklearn.cluster import KMeans
 
 
 np.random.seed(42)
@@ -51,6 +52,15 @@ def calculate_loss(edge_list, W, H, mlambda, const):
 
 def calculate_nmi(H, correct_label):
     com = H.argmax(axis=1)
+    nmi = normalized_mutual_info_score(com, correct_label)
+    return nmi
+
+def calculate_nmi_kmeans(H, correct_label):
+    km = KMeans(H.shape[1])
+    try:
+        com = km.fit_predict(H)
+    except:
+        com = [0] * H.shape[0]
     nmi = normalized_mutual_info_score(com, correct_label)
     return nmi
 
@@ -101,6 +111,7 @@ if __name__=="__main__":
             W, H, best_cost, cost_list, H_list = model.fit_and_transform(edge_list, const,
                     threshold=threshold, steps=max_iters)
             nmi_list = [calculate_nmi(H, correct_label) for H in H_list]
+            km_list = [calculate_nmi_kmeans(H, correct_label) for H in H_list]
 
             costs[name] = cost_list
             nmis[name] = nmi_list

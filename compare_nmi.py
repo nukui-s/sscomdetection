@@ -32,7 +32,8 @@ def expand_synmetric(elist):
 def calculate_loss(edge_list, W, H, mlambda, const):
     nn = H.shape[0]
     edge_list = expand_synmetric(edge_list)
-    const = expand_synmetric(const)
+    if const:
+        const = expand_synmetric(const)
     X = make_matrix_from_elist(edge_list, nn)
     O = make_matrix_from_elist(const, nn)
     D = np.diag(O.sum(axis=1))
@@ -63,14 +64,14 @@ if __name__=="__main__":
         dense_label = str(int(density))
         data_path = "data/%s_edge.pkl"%(data_label)
         label_path = "data/%s_label.pkl"%(data_label)
-        const_path = "data/const/degree_%s_%d.pkl"%(data_label, density)
+        const_path = const_base.format(data_label, density)
 
         edge_list = pd.read_pickle(data_path)
         correct_label = pd.read_pickle(label_path)
         const = pd.read_pickle(const_path)
 
         if len(const) == 0:
-            const = None
+            const = [(0, 0)]
 
         abs_adam = SynmetricSSCD(K, method="adam", positivate="abs", mlambda=mlambda, learning_rate=lr_adam, threads=threads)
         kl_adam = KLSynmetricSSCD(K, method="adam", positivate="abs", mlambda=mlambda, learning_rate=lr_adam, threads=threads)
@@ -101,8 +102,8 @@ if __name__=="__main__":
                 nmis.setdefault(name, [])
                 best_costs.setdefault(name, [])
                 start = time.time()
-                W, H, best_cost, cost_list = model.fit_and_transform(edge_list, const,
-                        threshold=threshold,steps=max_iters)
+                W, H, best_cost, cost_list, H_list = model.fit_and_transform(edge_list, const,
+                        threshold=threshold, steps=max_iters)
                 elapsed = time.time() - start
                 loss = calculate_loss(edge_list, W, H, mlambda, const)
                 nmi = calculate_nmi(H, correct_label)
@@ -116,7 +117,7 @@ if __name__=="__main__":
                 best_costs[name].append(best_cost)
                 #import pdb; pdb.set_trace()
 
-        result_path = "result/"+exp_label+"_" + dense_label+".csv"
+        result_path = "result/{}_{}.csv".format(exp_name, dense_label)
         model_names = sorted(list(models.keys()))
         with open(result_path, "w") as f:
             writer = csv.writer(f)
